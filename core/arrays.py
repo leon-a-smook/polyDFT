@@ -1,7 +1,8 @@
+# core/arrays.py
 import jax
 import jax.numpy as jnp
 
-Array = jax.Array  # Optional: for type hints
+Array = jax.Array  # For hint types
 xp = jnp  # Drop-in replacement for NumPy API
 
 def get_device_info():
