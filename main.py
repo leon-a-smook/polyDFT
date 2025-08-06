@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # System definition
-Lz = 50
-N = 64
+Lz = 32
+N = 32
 b = 1.0
 
 # Choose discretization
@@ -17,13 +17,14 @@ Ns = int(N / ds)
 s_vals = np.linspace(0, N, Ns+1)
 
 # System parameters
-D = b**2 / 6
+D = (b**2 / 6)     
 print("This chain in solution would have\nRg = ", b*np.sqrt(N/6))
-print("The following value should be < 0.5: ", D*ds/dz/dz)
+print("The following value should be < 0.5: ", D*ds/(dz**2))
+assert D*ds/dz/dz <= 0.5, "Adjust discretization"
 
 # Set up forward propagator
 q_forward_init = np.zeros_like(z)
-q_forward_init[1] = 1/dz
+q_forward_init[0] = 1 / dz
 
 # Set up backward propagator
 q_backward_init = np.zeros_like(z)
@@ -62,7 +63,7 @@ M_right = (I + 0.5 * ds * A).tocsc()
 lu = splu(M_left)
 
 # Propagate forward in s
-q = q_forward_init
+q = q_forward_init.copy()
 q_forward = [q.copy()]
 for n in range(Ns):
     rhs = M_right @ q
@@ -71,7 +72,7 @@ for n in range(Ns):
 q_forward = np.array(q_forward)
 
 # Propagate forward in s
-q = q_backward_init
+q = q_backward_init.copy()
 q_backward = [q.copy()]
 for n in range(Ns):
     rhs = M_right @ q
@@ -84,13 +85,14 @@ Q = np.trapezoid(q_forward[-1,:],z)
 print("Q = ", Q)
 
 # The polymer density
-# rho = np.zeros_like(z)
-# for n in range(Ns + 1):
-#     q_s = q_forward[n]
-#     qd_s = q_backward[Ns - n]
-#     rho += q_s * qd_s
+rho_p = np.zeros_like(z)
+for n in range(Ns + 1):
+    q_s = q_forward[n]
+    qd_s = q_backward[Ns - n]
+    rho_p += q_s * qd_s
 
-# rho *= ds / Q
+rho_p *= ds / Q
+rho_p
 
 # -----------------
 # Plot propagators
@@ -134,17 +136,18 @@ mix_max = 0.3
 shrink = 0.5
 grow = 1.1
 prev_dw = None
-alpha = 0.2
+alpha = 0.5
 
 
 # Brush parameters
-sigma = 0.01
+sigma = 0.02
 chi = 0.0
-V_s = Lz - sigma*N
+rho_p *= sigma
+rho_s = 1 - rho_p
 
 # Provide potential
-w_p = np.zeros_like(z) + 1e-12 # polymer field
-w_s = np.zeros_like(z) + 1e-12 # solvent field
+w_p = 0.1 * np.ones_like(z)  # polymer field
+w_s = np.zeros_like(z) # solvent field
 lambda_field = np.zeros_like(z)
 # from dft.mixers import Anderson
 # mixer = Anderson(m=5, beta=0.02)
@@ -162,7 +165,7 @@ for iteration in range(max_iter):
     lu = splu(M_left)
 
     # Propagate forward in s
-    q = q_forward_init
+    q = q_forward_init.copy()
     q_forward = [q.copy()]
     for n in range(Ns):
         rhs = M_right @ q
@@ -171,7 +174,7 @@ for iteration in range(max_iter):
     q_forward = np.array(q_forward)
 
     # Propagate forward in s
-    q = q_backward_init
+    q = q_backward_init.copy()
     q_backward = [q.copy()]
     for n in range(Ns):
         rhs = M_right @ q
@@ -194,8 +197,11 @@ for iteration in range(max_iter):
     # Clip rho values to contrained values
     rho_p = np.where(rho_p >= 1.0, 1.0 - 1e-16, rho_p)
     
-    # Solvent density and field
-    rho_s = np.exp(-w_s)                       
+    if iteration == 0:
+        rho_s = 1 - rho_p
+    else:
+        # Solvent density and field
+        rho_s = np.exp(-w_s)                       
     # Q_s = np.trapezoid(rho_s, z)           
     # rho_s /= Q_s   
     # rho_s *= (Lz - np.trapezoid(rho_p, z))
@@ -203,6 +209,9 @@ for iteration in range(max_iter):
     # Incompressibility residual
     residual = rho_p + rho_s - 1.0
     lambda_field += alpha * residual
+
+    rho_p = np.clip(rho_p, 1e-12, 1 - 1e-12)
+    rho_s = np.clip(rho_s, 1e-12, 1 - 1e-12)
 
     # Calculate new fields
     w_p_new = np.log(rho_p) + chi * rho_s + lambda_field
@@ -216,7 +225,7 @@ for iteration in range(max_iter):
     dw = np.linalg.norm(w_p_new - w_p) / np.linalg.norm(w_p_new)
     res_norm = np.linalg.norm(residual) / Nz
     # dw += np.linalg.norm(w_s_new - w_s) / np.linalg.norm(w_s_new)
-    print(f"iter {iteration}: dw = {dw:.2e} mix = {mix:.3f} res = {res_norm}")
+    print(f"iter {iteration}: dw = {dw:.2e} mix = {mix:.3f} res = {res_norm:.2e} Q = {Q_p:.4e}")
     # print("w min:", w.min(), "w max:", w.max())
 
     if dw < tol:
@@ -235,6 +244,7 @@ for iteration in range(max_iter):
     w_p = (1 - mix) * w_p + mix * w_p_new 
     w_s = (1 - mix) * w_s + mix * w_s_new
 
+
     # w_p = np.log(rho_p) + chi * rho_s + lambda_field
     # w_s = np.log(rho_s) + chi * rho_p + lambda_field
 
@@ -246,15 +256,20 @@ total_monomers = np.trapezoid(rho_p, z)
 print("int rho(z) dz =", total_monomers)
 print("Expected = sigma * N =", sigma * N)
 print("Height = ", np.trapezoid(z*rho_p,z)/np.trapezoid(rho_p,z))
+print("Q = ", Q_p)
+print("This chain in solution would have\nRg = ", np.sqrt((N*(b)**2)/6))
 
 # -----------------
 # Plot density
 # -----------------
 fig, ax = plt.subplots()
-ax.plot(z, rho_p, "-", label='Polymer')
-ax.plot(z, rho_s, "-", label="Solvent")
+ax.plot(z, np.log(rho_p), "-", label='Polymer')
+ax.plot(z, chi * rho_s, "-", label='Polymer chi')
+# ax.plot(z, rho_s, "-", label="Solvent")
+ax.plot(z, lambda_field, label="lambda")
+# ax.plot(z, w_p, label="w_p")
 ax.set_ylabel('$\\rho$')
 ax.set_xlabel('z')
-ax.set_ylim([0,1])
+# ax.set_ylim([0,0.1])
 ax.legend()
 plt.show()
