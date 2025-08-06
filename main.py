@@ -38,6 +38,7 @@ L = diags([off, main, off], offsets=[-1,0,1], shape=(Nz, Nz)).tolil()
 # Implement Neuman bc
 L[0,0], L[0,1] = -2.0, 2.0
 L[-1,-2], L[-1,-1] = 2.0, -2.0
+
 L = L.tocsr()
 L /= dz**2
 DL = D * L
@@ -121,21 +122,21 @@ rho *= ds / Q
 # plt.show()
 
 
-# =========================================
-# Chain with excluded volume
-# =========================================
-max_iter = int(1e2)
+# ==============================================
+# Chain with excluded volume + incompressibility
+# ==============================================
+max_iter = int(1e3)
 tol = 1e-6
-mix = 0.2
-mix_min = 0.01
-mix_max = 0.9
+mix = 0.1
+mix_min = 0.02
+mix_max = 0.3
 shrink = 0.5
 grow = 1.05
 prev_dw = None
 
 # Brush parameters
 sigma = 0.1
-chi = 1.0
+chi = -2.0
 
 # Provide potential
 w = np.zeros_like(z)
@@ -181,13 +182,18 @@ for iteration in range(max_iter):
         rho += q_s * qd_s
     rho *= ds / Q
     rho *= sigma
-
+    
+    # Clip rho values to contrained values
+    rho = np.where(rho >= 1.0, 1.0 - 1e-8, rho)
+    
     # Update field
-    w_new = chi * rho
+    w_new = chi * rho - np.log(1-rho)
+    rho_s = 1 - rho
 
     # Check convergence
     dw = np.linalg.norm(w_new - w) / np.linalg.norm(w_new)
     print(f"iter {iteration}: dw = {dw:.2e} mix {mix:.3f}")
+    # print("w min:", w.min(), "w max:", w.max())
 
     if dw < tol:
         break
@@ -199,7 +205,7 @@ for iteration in range(max_iter):
         else:
             mix = min(mix * grow, mix_max)
 
-    w = (1-mix)*w + mix*w_new
+    w = (1-mix) * w + mix * w_new
 
     prev_dw = dw
 

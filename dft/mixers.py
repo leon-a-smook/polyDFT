@@ -49,8 +49,8 @@ class Anderson:
         dw = F @ c
 
         # Clip update size
-        dw_norm = np.linalg.norm(dw)
-        if dw_norm > 10 * res_norm:
-            dw *= (10 * res_norm / dw_norm)
-            
+        # dw_norm = np.linalg.norm(dw)
+        # if dw_norm > 10 * res_norm:
+        #     dw *= (10 * res_norm / dw_norm)
+
         return w + self.beta * dw
