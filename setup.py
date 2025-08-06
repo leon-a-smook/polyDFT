@@ -2,15 +2,16 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="polymer_dft",
-    version="0.1.0",
+    name="dft",
+    version="0.0.1",
     packages=find_packages(),
     install_requires=[
         "jax",
         "jaxlib",
         "matplotlib",
         "pyyaml",
+        "numpy"
     ],
-    author="Your Name",
+    author="Leon A. Smook",
     description="Polymer DFT simulation package",
 )

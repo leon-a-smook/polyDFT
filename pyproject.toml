@@ -7,7 +7,7 @@ name = "polymer_dft"
 version = "0.1.0"
 description = "Polymer DFT simulation package"
 authors = [
-    { name="Your Name", email="you@example.com" }
+    { name="Leon A. Smook", email="leon.a.smook@gmail.com" }
 ]
 dependencies = [
     "jax",
@@ -17,4 +17,4 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["polymer_dft"]
+where = ["dft"]
