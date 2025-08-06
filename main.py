@@ -126,8 +126,15 @@ rho *= ds / Q
 # =========================================
 max_iter = int(1e2)
 tol = 1e-6
-mix = 0.1
-sigma = 0.2
+mix = 0.2
+mix_min = 0.01
+mix_max = 0.9
+shrink = 0.5
+grow = 1.05
+prev_dw = None
+
+# Brush parameters
+sigma = 0.1
 chi = 1.0
 
 # Provide potential
@@ -180,18 +187,28 @@ for iteration in range(max_iter):
 
     # Check convergence
     dw = np.linalg.norm(w_new - w) / np.linalg.norm(w_new)
-    print(f"iter {iteration}: dw = {dw:.2e}")
+    print(f"iter {iteration}: dw = {dw:.2e} mix {mix:.3f}")
 
     if dw < tol:
         break
 
+    # Adaptive mixing
+    if prev_dw is not None:
+        if dw > prev_dw:
+            mix = max(mix * shrink, mix_min)
+        else:
+            mix = min(mix * grow, mix_max)
+
     w = (1-mix)*w + mix*w_new
+
+    prev_dw = dw
 
 q0 = q_forward_init  # initial forward propagator
 print("int q0(z) dz =", np.trapz(q_forward_init, z))
 total_monomers = np.trapz(rho, z)
 print("int rho(z) dz =", total_monomers)
 print("Expected = sigma * N =", sigma * N)
+print("Height = ", np.trapz(z*rho,z)/np.trapz(rho,z))
 
 # -----------------
 # Plot density
