@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # System definition
-Lz = 30
+Lz = 50
 N = 100
 b = 1.0
 
@@ -26,7 +26,7 @@ q_forward_init[1] = 1/dz
 
 # Set up backward propagator
 q_backward_init = np.zeros_like(z)
-q_backward_init[:] = 1 / Lz
+q_backward_init[:] = 1
 
 # Build diagonal matrix
 from scipy.sparse import diags
@@ -126,9 +126,9 @@ rho *= ds / Q
 # =========================================
 max_iter = int(1e2)
 tol = 1e-6
-mix = 0.2
+mix = 0.1
 sigma = 0.2
-chi = 2.0
+chi = 1.0
 
 # Provide potential
 w = np.zeros_like(z)
@@ -187,6 +187,12 @@ for iteration in range(max_iter):
         break
     
     w = (1- mix) * w + mix * w_new
+
+q0 = q_forward_init  # initial forward propagator
+print("int q0(z) dz =", np.trapz(q_forward_init, z))
+total_monomers = np.trapz(rho, z)
+print("int rho(z) dz =", total_monomers)
+print("Expected = sigma * N =", sigma * N)
 
 # -----------------
 # Plot density

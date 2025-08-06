@@ -145,3 +145,4 @@ We solve this by iteratively updating $w(z)$ using a self-consistent loop
 4. For stability: define the new $w(z)$ using a mixing approach such that
    - $w(z) = (1-\alpha)w_{\text{old}} + \alpha w_{\text{new}}$  
 5. Repeat steps 1-3 until step 3 is satisfied.
+   
