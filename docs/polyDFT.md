@@ -135,3 +135,13 @@ The polymer density describes the concentration of monomers at position $z$ alon
 This can be expressed as
 $$\rho(\mathbf{r}) = \frac{1}{Q}\int_0^N  q(\mathbf{r},s)q^\dag(\mathbf{r},N-s) ds$$
 
+# The self-consistent loop
+We now have all ingredients to create a self-consistent loop. In this self-consistent loop we need to satisfy
+$$w(\rho(z)) \Leftrightarrow \rho(w(z))$$
+We solve this by iteratively updating $w(z)$ using a self-consistent loop
+1. Compute $\rho(z)$ from an initial guess of $w(z)$
+2. Compute $w_{\text{new}}(z)$ based on the computed $\rho(z)$
+3. Check if $w_{\text{new}}(z) = w(z)$
+4. For stability: define the new $w(z)$ using a mixing approach such that
+   - $w(z) = (1-\alpha)w_{\text{old}} + \alpha w_{\text{new}}$  
+5. Repeat steps 1-3 until step 3 is satisfied.

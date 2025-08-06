@@ -192,8 +192,8 @@ for iteration in range(max_iter):
 # Plot density
 # -----------------
 fig, ax = plt.subplots()
-ax.plot(z, rho, "-")
-ax.set_ylabel('rho')
+ax.plot(z, rho, "-",label='Polymer')
+ax.set_ylabel('$\\rho$')
 ax.set_xlabel('z')
 ax.legend()
 plt.show()
