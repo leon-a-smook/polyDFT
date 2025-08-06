@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # System definition
-Lz = 40
+Lz = 50
 N = 64
 b = 1.0
 
@@ -19,6 +19,7 @@ s_vals = np.linspace(0, N, Ns+1)
 # System parameters
 D = b**2 / 6
 print("This chain in solution would have\nRg = ", b*np.sqrt(N/6))
+print("The following value should be < 0.5: ", D*ds/dz/dz)
 
 # Set up forward propagator
 q_forward_init = np.zeros_like(z)
@@ -83,13 +84,13 @@ Q = np.trapezoid(q_forward[-1,:],z)
 print("Q = ", Q)
 
 # The polymer density
-rho = np.zeros_like(z)
-for n in range(Ns + 1):
-    q_s = q_forward[n]
-    qd_s = q_backward[Ns - n]
-    rho += q_s * qd_s
+# rho = np.zeros_like(z)
+# for n in range(Ns + 1):
+#     q_s = q_forward[n]
+#     qd_s = q_backward[Ns - n]
+#     rho += q_s * qd_s
 
-rho *= ds / Q
+# rho *= ds / Q
 
 # -----------------
 # Plot propagators
@@ -128,17 +129,17 @@ rho *= ds / Q
 max_iter = int(1e3)
 tol = 1e-6
 mix = 0.1
-mix_min = 0.02
+mix_min = 0.01
 mix_max = 0.3
 shrink = 0.5
-grow = 1.05
+grow = 1.1
 prev_dw = None
-alpha = 0.02
+alpha = 0.2
 
 
 # Brush parameters
-sigma = 0.1
-chi = 0.5
+sigma = 0.01
+chi = 0.0
 V_s = Lz - sigma*N
 
 # Provide potential
@@ -191,12 +192,13 @@ for iteration in range(max_iter):
     rho_p *= sigma
     
     # Clip rho values to contrained values
-    rho_p = np.where(rho_p >= 1.0, 1.0 - 1e-12, rho_p)
+    rho_p = np.where(rho_p >= 1.0, 1.0 - 1e-16, rho_p)
     
     # Solvent density and field
     rho_s = np.exp(-w_s)                       
-    Q_s = np.trapezoid(rho_s, z) / V_s            
-    rho_s /= Q_s   
+    # Q_s = np.trapezoid(rho_s, z)           
+    # rho_s /= Q_s   
+    # rho_s *= (Lz - np.trapezoid(rho_p, z))
 
     # Incompressibility residual
     residual = rho_p + rho_s - 1.0
@@ -212,8 +214,9 @@ for iteration in range(max_iter):
 
     # Check convergence
     dw = np.linalg.norm(w_p_new - w_p) / np.linalg.norm(w_p_new)
-    dw += np.linalg.norm(w_s_new - w_s) / np.linalg.norm(w_s_new)
-    print(f"iter {iteration}: dw = {dw:.2e} mix = {mix:.3f} MSres = {np.sum(np.sqrt(residual**2)):.3f}")
+    res_norm = np.linalg.norm(residual) / Nz
+    # dw += np.linalg.norm(w_s_new - w_s) / np.linalg.norm(w_s_new)
+    print(f"iter {iteration}: dw = {dw:.2e} mix = {mix:.3f} res = {res_norm}")
     # print("w min:", w.min(), "w max:", w.max())
 
     if dw < tol:
@@ -232,14 +235,17 @@ for iteration in range(max_iter):
     w_p = (1 - mix) * w_p + mix * w_p_new 
     w_s = (1 - mix) * w_s + mix * w_s_new
 
+    # w_p = np.log(rho_p) + chi * rho_s + lambda_field
+    # w_s = np.log(rho_s) + chi * rho_p + lambda_field
+
     prev_dw = dw
 
 q0 = q_forward_init  # initial forward propagator
 print("int q0(z) dz =", np.trapezoid(q_forward_init, z))
-total_monomers = np.trapezoid(rho, z)
+total_monomers = np.trapezoid(rho_p, z)
 print("int rho(z) dz =", total_monomers)
 print("Expected = sigma * N =", sigma * N)
-print("Height = ", np.trapezoid(z*rho,z)/np.trapezoid(rho,z))
+print("Height = ", np.trapezoid(z*rho_p,z)/np.trapezoid(rho_p,z))
 
 # -----------------
 # Plot density
