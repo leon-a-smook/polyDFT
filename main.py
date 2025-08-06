@@ -133,7 +133,6 @@ chi = 1.0
 # Provide potential
 w = np.zeros_like(z)
 
-
 for iteration in range(max_iter):
     W = diags(w,0)
 
@@ -185,8 +184,8 @@ for iteration in range(max_iter):
 
     if dw < tol:
         break
-    
-    w = (1- mix) * w + mix * w_new
+
+    w = (1-mix)*w + mix*w_new
 
 q0 = q_forward_init  # initial forward propagator
 print("int q0(z) dz =", np.trapz(q_forward_init, z))
