@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # System definition
-Lz = 50
-N = 100
+Lz = 40
+N = 64
 b = 1.0
 
 # Choose discretization
@@ -79,7 +79,7 @@ for n in range(Ns):
 q_backward = np.array(q_backward)
 
 # The partition function
-Q = np.trapz(q_forward[-1,:],z)
+Q = np.trapezoid(q_forward[-1,:],z)
 print("Q = ", Q)
 
 # The polymer density
@@ -133,16 +133,23 @@ mix_max = 0.3
 shrink = 0.5
 grow = 1.05
 prev_dw = None
+alpha = 0.02
+
 
 # Brush parameters
 sigma = 0.1
-chi = -2.0
+chi = 0.5
+V_s = Lz - sigma*N
 
 # Provide potential
-w = np.zeros_like(z)
+w_p = np.zeros_like(z) + 1e-12 # polymer field
+w_s = np.zeros_like(z) + 1e-12 # solvent field
+lambda_field = np.zeros_like(z)
+# from dft.mixers import Anderson
+# mixer = Anderson(m=5, beta=0.02)
 
 for iteration in range(max_iter):
-    W = diags(w,0)
+    W = diags(w_p,0)
 
     # Setup Crank-Nicolson Matrices
     A = DL - W
@@ -172,27 +179,41 @@ for iteration in range(max_iter):
     q_backward = np.array(q_backward)
 
     # The partition function
-    Q = np.trapz(q_forward[-1,:],z)
+    Q_p = np.trapezoid(q_forward[-1,:],z)
 
     # The polymer density
-    rho = np.zeros_like(z)
+    rho_p = np.zeros_like(z)
     for n in range(Ns + 1):
         q_s = q_forward[n]
         qd_s = q_backward[Ns - n]
-        rho += q_s * qd_s
-    rho *= ds / Q
-    rho *= sigma
+        rho_p += q_s * qd_s
+    rho_p *= ds / Q_p
+    rho_p *= sigma
     
     # Clip rho values to contrained values
-    rho = np.where(rho >= 1.0, 1.0 - 1e-8, rho)
+    rho_p = np.where(rho_p >= 1.0, 1.0 - 1e-12, rho_p)
     
+    # Solvent density and field
+    rho_s = np.exp(-w_s)                       
+    Q_s = np.trapezoid(rho_s, z) / V_s            
+    rho_s /= Q_s   
+
+    # Incompressibility residual
+    residual = rho_p + rho_s - 1.0
+    lambda_field += alpha * residual
+
+    # Calculate new fields
+    w_p_new = np.log(rho_p) + chi * rho_s + lambda_field
+    w_s_new = np.log(rho_s) + chi * rho_p + lambda_field
+
     # Update field
-    w_new = chi * rho - np.log(1-rho)
-    rho_s = 1 - rho
+    # Simple excluded volume model
+    # w_new = chi * rho - np.log(1-rho)
 
     # Check convergence
-    dw = np.linalg.norm(w_new - w) / np.linalg.norm(w_new)
-    print(f"iter {iteration}: dw = {dw:.2e} mix {mix:.3f}")
+    dw = np.linalg.norm(w_p_new - w_p) / np.linalg.norm(w_p_new)
+    dw += np.linalg.norm(w_s_new - w_s) / np.linalg.norm(w_s_new)
+    print(f"iter {iteration}: dw = {dw:.2e} mix = {mix:.3f} MSres = {np.sum(np.sqrt(residual**2)):.3f}")
     # print("w min:", w.min(), "w max:", w.max())
 
     if dw < tol:
@@ -205,23 +226,29 @@ for iteration in range(max_iter):
         else:
             mix = min(mix * grow, mix_max)
 
-    w = (1-mix) * w + mix * w_new
+    # Update fields
+    # w_p = mixer.mix(w_p, w_p_new)
+    # w_s = mixer.mix(w_s, w_s_new)
+    w_p = (1 - mix) * w_p + mix * w_p_new 
+    w_s = (1 - mix) * w_s + mix * w_s_new
 
     prev_dw = dw
 
 q0 = q_forward_init  # initial forward propagator
-print("int q0(z) dz =", np.trapz(q_forward_init, z))
-total_monomers = np.trapz(rho, z)
+print("int q0(z) dz =", np.trapezoid(q_forward_init, z))
+total_monomers = np.trapezoid(rho, z)
 print("int rho(z) dz =", total_monomers)
 print("Expected = sigma * N =", sigma * N)
-print("Height = ", np.trapz(z*rho,z)/np.trapz(rho,z))
+print("Height = ", np.trapezoid(z*rho,z)/np.trapezoid(rho,z))
 
 # -----------------
 # Plot density
 # -----------------
 fig, ax = plt.subplots()
-ax.plot(z, rho, "-",label='Polymer')
+ax.plot(z, rho_p, "-", label='Polymer')
+ax.plot(z, rho_s, "-", label="Solvent")
 ax.set_ylabel('$\\rho$')
 ax.set_xlabel('z')
+ax.set_ylim([0,1])
 ax.legend()
 plt.show()
