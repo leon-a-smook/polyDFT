@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # System definition
-Lz = 25
-N = 64
+Lz = 30
+N = 100
 b = 1.0
 
 # Choose discretization
@@ -41,6 +41,10 @@ L[-1,-2], L[-1,-1] = 2.0, -2.0
 L = L.tocsr()
 L /= dz**2
 DL = D * L
+
+# =========================================
+# Simple grafted chain without interactions
+# =========================================
 
 # Provide potential
 w = np.zeros_like(z)
@@ -89,22 +93,100 @@ rho *= ds / Q
 # -----------------
 # Plot propagators
 # -----------------
-fig, ax = plt.subplots()
-ax.plot(z, q_forward[0,:], ":", label='q(z,0)')
-ax.plot(z, q_forward[1*int(Ns/4),:], ":", label=f'q(z,{1*int(Ns/4)})')
-ax.plot(z, q_forward[2*int(Ns/4),:], ":", label=f'q(z,{2*int(Ns/4)})')
-ax.plot(z, q_forward[3*int(Ns/4),:], ":", label=f'q(z,{3*int(Ns/4)})')
-ax.plot(z, q_forward[4*int(Ns/4),:], ":", label=f'q(z,{4*int(Ns/4)})')
+# fig, ax = plt.subplots()
+# ax.plot(z, q_forward[0,:], ":", label='q(z,0)')
+# ax.plot(z, q_forward[1*int(Ns/4),:], ":", label=f'q(z,{1*int(Ns/4)})')
+# ax.plot(z, q_forward[2*int(Ns/4),:], ":", label=f'q(z,{2*int(Ns/4)})')
+# ax.plot(z, q_forward[3*int(Ns/4),:], ":", label=f'q(z,{3*int(Ns/4)})')
+# ax.plot(z, q_forward[4*int(Ns/4),:], ":", label=f'q(z,{4*int(Ns/4)})')
 
-ax.plot(z, q_backward[0,:], "--", label='q(z,0)')
-ax.plot(z, q_backward[1*int(Ns/4),:], "--", label=f'q(z,{1*int(Ns/4)})')
-ax.plot(z, q_backward[2*int(Ns/4),:], "--", label=f'q(z,{2*int(Ns/4)})')
-ax.plot(z, q_backward[3*int(Ns/4),:], "--", label=f'q(z,{3*int(Ns/4)})')
-ax.plot(z, q_backward[4*int(Ns/4),:], "--", label=f'q(z,{4*int(Ns/4)})')
-ax.set_ylabel('q')
-ax.set_xlabel('z')
-ax.legend()
-plt.show()
+# ax.plot(z, q_backward[0,:], "--", label='q(z,0)')
+# ax.plot(z, q_backward[1*int(Ns/4),:], "--", label=f'q(z,{1*int(Ns/4)})')
+# ax.plot(z, q_backward[2*int(Ns/4),:], "--", label=f'q(z,{2*int(Ns/4)})')
+# ax.plot(z, q_backward[3*int(Ns/4),:], "--", label=f'q(z,{3*int(Ns/4)})')
+# ax.plot(z, q_backward[4*int(Ns/4),:], "--", label=f'q(z,{4*int(Ns/4)})')
+# ax.set_ylabel('q')
+# ax.set_xlabel('z')
+# ax.legend()
+# plt.show()
+
+# -----------------
+# Plot density
+# -----------------
+# fig, ax = plt.subplots()
+# ax.plot(z, rho, "-")
+# ax.set_ylabel('rho')
+# ax.set_xlabel('z')
+# ax.legend()
+# plt.show()
+
+
+# =========================================
+# Chain with excluded volume
+# =========================================
+max_iter = int(1e2)
+tol = 1e-6
+mix = 0.2
+sigma = 0.2
+chi = 2.0
+
+# Provide potential
+w = np.zeros_like(z)
+
+
+for iteration in range(max_iter):
+    W = diags(w,0)
+
+    # Setup Crank-Nicolson Matrices
+    A = DL - W
+    I = diags([np.ones(Nz)],[0])
+    M_left = (I - 0.5 * ds * A).tocsc()
+    M_right = (I + 0.5 * ds * A).tocsc()
+
+    # LU factorization to speed up solving
+    lu = splu(M_left)
+
+    # Propagate forward in s
+    q = q_forward_init
+    q_forward = [q.copy()]
+    for n in range(Ns):
+        rhs = M_right @ q
+        q = lu.solve(rhs)
+        q_forward.append(q.copy())
+    q_forward = np.array(q_forward)
+
+    # Propagate forward in s
+    q = q_backward_init
+    q_backward = [q.copy()]
+    for n in range(Ns):
+        rhs = M_right @ q
+        q = lu.solve(rhs)
+        q_backward.append(q.copy())
+    q_backward = np.array(q_backward)
+
+    # The partition function
+    Q = np.trapz(q_forward[-1,:],z)
+
+    # The polymer density
+    rho = np.zeros_like(z)
+    for n in range(Ns + 1):
+        q_s = q_forward[n]
+        qd_s = q_backward[Ns - n]
+        rho += q_s * qd_s
+    rho *= ds / Q
+    rho *= sigma
+
+    # Update field
+    w_new = chi * rho
+
+    # Check convergence
+    dw = np.linalg.norm(w_new - w) / np.linalg.norm(w_new)
+    print(f"iter {iteration}: dw = {dw:.2e}")
+
+    if dw < tol:
+        break
+    
+    w = (1- mix) * w + mix * w_new
 
 # -----------------
 # Plot density
