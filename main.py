@@ -164,6 +164,8 @@ for iteration in range(max_iter):
     # LU factorization to speed up solving
     lu = splu(M_left)
 
+    ## CHECK PROPAGATORS - END POINTS ACCUMULATE, GRAFT POINTS DISSAPEAR
+
     # Propagate forward in s
     q = q_forward_init.copy()
     q_forward = [q.copy()]
@@ -184,6 +186,11 @@ for iteration in range(max_iter):
 
     # The partition function
     Q_p = np.trapezoid(q_forward[-1,:],z)
+    plt.plot(q_forward[0,:],label='0')
+    plt.plot(q_forward[int(Ns/2),:],label='mid')
+    plt.plot(q_forward[-3,:],label='end')
+    plt.legend()
+    plt.show()
 
     # The polymer density
     rho_p = np.zeros_like(z)
