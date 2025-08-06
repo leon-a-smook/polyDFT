@@ -128,3 +128,10 @@ Let's start with the partition function, which can be expressed as
 $$Q = \int q(\mathbf{r},N) d\mathbf{r}$$
 
 where we integrate over the forward propagator only. The propagator already includes contributions from the chain segments, so we only need to integrate over the final segment in space to obtain the statistical weight. 
+
+# The polymer density $\rho(z)$
+The polymer density describes the concentration of monomers at position $z$ along the chain contour. For this we need a backward propagator ($q^\dag$) besides the forward propagator we already computed. The backward propagator follows polymer chains from unconstrained locations. Essentially, it allows one to compute how the probability of finding segment $s$ at position $z$ by taking into account how that segment can end up there from the grafting point *and* from the free end.
+
+This can be expressed as
+$$\rho(\mathbf{r}) = \frac{1}{Q}\int_0^N  q(\mathbf{r},s)q^\dag(\mathbf{r},N-s) ds$$
+

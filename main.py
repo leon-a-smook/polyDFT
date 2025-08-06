@@ -77,6 +77,18 @@ q_backward = np.array(q_backward)
 Q = np.trapz(q_forward[-1,:],z)
 print("Q = ", Q)
 
+# The polymer density
+rho = np.zeros_like(z)
+for n in range(Ns + 1):
+    q_s = q_forward[n]
+    qd_s = q_backward[Ns - n]
+    rho += q_s * qd_s
+
+rho *= ds / Q
+
+# -----------------
+# Plot propagators
+# -----------------
 fig, ax = plt.subplots()
 ax.plot(z, q_forward[0,:], ":", label='q(z,0)')
 ax.plot(z, q_forward[1*int(Ns/4),:], ":", label=f'q(z,{1*int(Ns/4)})')
@@ -94,4 +106,12 @@ ax.set_xlabel('z')
 ax.legend()
 plt.show()
 
-
+# -----------------
+# Plot density
+# -----------------
+fig, ax = plt.subplots()
+ax.plot(z, rho, "-")
+ax.set_ylabel('rho')
+ax.set_xlabel('z')
+ax.legend()
+plt.show()
