@@ -119,3 +119,12 @@ and finally we solve
 $$M_{\text{left}} \mathbf{q}^{n+1} = M_{\text{right}} \mathbf{q}^{n}$$
 
 Since $M_{\text{left}}$ and $M_{\text{right}}$ are independent of $\mathbf{q}^n$, they can be reused for each iteration step over $n$.
+
+# The partition function
+Now that we can compute the chain propagators efficiently, we can start to extract some interesting quantities. 
+
+Let's start with the partition function, which can be expressed as
+
+$$Q = \int q(\mathbf{r},N) d\mathbf{r}$$
+
+where we integrate over the forward propagator only. The propagator already includes contributions from the chain segments, so we only need to integrate over the final segment in space to obtain the statistical weight. 
