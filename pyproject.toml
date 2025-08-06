@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "polymer_dft"
+version = "0.1.0"
+description = "Polymer DFT simulation package"
+authors = [
+    { name="Your Name", email="you@example.com" }
+]
+dependencies = [
+    "jax",
+    "jaxlib",
+    "matplotlib",
+    "pyyaml"
+]
+
+[tool.setuptools.packages.find]
+where = ["polymer_dft"]

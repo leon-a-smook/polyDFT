@@ -15,3 +15,15 @@ class Grid1D:
         delta = xp.zeros_like(self.z)
         delta = delta.at[idx].set(1.0 / self.dz)
         return delta
+    
+    def gaussian_graft(self, width=0.1):
+        """
+        Returns a smooth initial condition centered at the grafting point.
+        width: standard deviation of the Gaussian (in same units as z)
+        """
+        norm = 1.0 / (width * xp.sqrt(2.0 * xp.pi))
+        gaussian = norm * xp.exp(-0.5 * ((self.z - self.grafting_z) / width) ** 2)
+
+        # Normalize so total area = 1 (consistent with delta function)
+        gaussian /= xp.sum(gaussian) * self.dz
+        return gaussian

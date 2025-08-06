@@ -20,3 +20,15 @@ polyDFT</br>
 | $z$                 | Spatial coordinate              | `z`                  |
 | $s$                 | Contour variable along chain    | `s`                  |
 | $N$                 | Chain length (segments)         | `N_segments`         |
+
+## Propagators
+A crank_nicolson propagator is implemented to solve the modified diffusion equation of the form:
+$$\frac{\partial q(z,s)}{\partial s} = \frac{a^2}{6}\frac{\partial^2 q(z,s)}{\partial z^2} - w(z)q(z,s) $$
+where $a$ is the Kuhn length.
+
+We implement neumann boundary conditions (which cause oscillations).
+
+
+## To Do
+- [ ] Implement mirror system (probably also useful for electrostatics later)
+
