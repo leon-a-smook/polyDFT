@@ -3,9 +3,10 @@ import numpy as np
 
 
 class Anderson:
-    def __init__(self, m=5, beta=0.1):
+    def __init__(self, m=5, beta=1.0, adaptive_beta = True):
         self.m = m                  # history depth
         self.beta = beta            # mixing damping
+        self.adaptive_beta = adaptive_beta
         self.reset()
     
     def reset(self):
@@ -34,6 +35,11 @@ class Anderson:
             return w + self.beta * r_k  # fallback to simple mixing
         self.prev_res_norm = res_norm
 
+        if self.adaptive_beta:
+            beta = self.beta / (1 + res_norm)
+        else:
+            beta = self.beta
+
         if len(self.res_hist) < 1:
             return w + self.beta * r_k
       
@@ -41,16 +47,16 @@ class Anderson:
         F = np.stack(self.field_hist, axis=1)
 
         try:
-            c, *_ = np.linalg.lstsq(R, r_k, rcond=None)
+            c, *_ = np.linalg.lstsq(R, r_k, rcond=1e-8)
         except np.linalg.LinAlgError:
             # if system is singular, use simple mixing
             return w + self.beta * r_k
         
         dw = F @ c
 
-        # Clip update size
-        # dw_norm = np.linalg.norm(dw)
-        # if dw_norm > 10 * res_norm:
-        #     dw *= (10 * res_norm / dw_norm)
+        # # Clip update size
+        dw_norm = np.linalg.norm(dw)
+        if dw_norm > 5 * res_norm:
+            dw *= (5 * res_norm / dw_norm)
 
         return w + self.beta * dw
