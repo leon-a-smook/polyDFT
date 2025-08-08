@@ -3,9 +3,14 @@ Implementation of polymer density functional theory
 
 ## Project structure
 polyDFT</br>
-├ main.py 
-    Entry point
-├ config.py
+| main.py *Entry point* </br>
+| README.md *Code explanation* </br>
+├ docs </br>
+  | polyDFT.md *Explanation of theory* </br>
+├ src </br>
+  ├ dft </br>
+    | mixers.py *SCFT update schemes* </br>
+
 
 ## Conventions
 | Mathematical Symbol | Meaning                         | Code Variable        |

@@ -153,7 +153,7 @@ mixes = []
 res_norms = []
 dws = []
 
-from dft.mixers import Anderson
+from src.dft.mixers import Anderson
 mixer = Anderson(m=10,beta=0.1,adaptive_beta=False)
 
 for iteration in range(max_iter):
