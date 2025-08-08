@@ -3,14 +3,14 @@ Implementation of polymer density functional theory
 
 ## Project structure
 ```
-polyDFT</br>
-| main.py *Entry point* </br>
-| README.md *Code explanation* </br>
-├ docs </br>
-  | polyDFT.md *Explanation of theory* </br>
-├ src </br>
-  ├ dft </br>
-    | mixers.py *SCFT update schemes* </br>
+polyDFT
+| main.py               Entry point
+| README.md             Code explanation
+├ docs
+  | polyDFT.md          Explanation of theory
+├ src
+  ├ dft
+    | mixers.py         SCFT update schemes
 ```
 
 ## Conventions

@@ -12,7 +12,7 @@ Nz = int(Lz / dz) + 1
 z = np.linspace(0, Lz, num=Nz)
 
 # Chain definition
-ds = 0.02 
+ds = 0.04 
 Ns = int(N / ds)
 s_vals = np.linspace(0, N, Ns+1)
 
@@ -117,12 +117,13 @@ rho_p
 # -----------------
 # Plot density
 # -----------------
-# fig, ax = plt.subplots()
-# ax.plot(z, rho, "-")
-# ax.set_ylabel('rho')
-# ax.set_xlabel('z')
-# ax.legend()
-# plt.show()
+print("H = ", np.trapz(rho_p*z,z)/np.trapz(rho_p,z))
+fig, ax = plt.subplots()
+ax.plot(z, rho_p, "-")
+ax.set_ylabel('rho')
+ax.set_xlabel('z')
+ax.legend()
+plt.show()
 
 
 # ==============================================
@@ -136,25 +137,24 @@ mix_max = 1.0
 shrink = 0.2
 grow = 1.05
 prev_dw = None
-alpha = 0.1
-
+alpha = 0.2
 
 # Brush parameters
 sigma = 0.1
-chi = 2.0
+chi = 0.5
 rho_p *= sigma
 rho_s = 1 - rho_p
 
 # Provide potential
-w_p = 0.1 * np.ones_like(z)  # polymer field
-w_s = np.zeros_like(z) # solvent field
+w_p = chi * rho_p  # polymer field
+w_s = chi * rho_s  # solvent field
 lambda_field = np.zeros_like(z)
 mixes = []
 res_norms = []
 dws = []
 
-from src.dft.mixers import Anderson
-mixer = Anderson(m=10,beta=0.1,adaptive_beta=False)
+from src.dft.solvers import Anderson
+mixer = Anderson(m=5,beta=1.0,adaptive_beta=True)
 
 for iteration in range(max_iter):
     W = diags(w_p,0)
@@ -223,7 +223,7 @@ for iteration in range(max_iter):
     # Check convergence
     dw = np.linalg.norm(w_p_new - w_p) / np.linalg.norm(w_p_new)
     
-    print(f"iter {iteration}: dw = {dw:.2e} mix = {mix:.3f} res = {res_norm:.2e} Q = {Q_p:.4e}")
+    print(f"iter {iteration}: dw = {dw:.2e} res = {res_norm:.2e} Q = {Q_p:.4e}")
     if dw < tol and res_norm < 1e-4:
         break
 
