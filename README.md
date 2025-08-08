@@ -2,6 +2,7 @@
 Implementation of polymer density functional theory
 
 ## Project structure
+```
 polyDFT</br>
 | main.py *Entry point* </br>
 | README.md *Code explanation* </br>
@@ -10,7 +11,7 @@ polyDFT</br>
 ├ src </br>
   ├ dft </br>
     | mixers.py *SCFT update schemes* </br>
-
+```
 
 ## Conventions
 | Mathematical Symbol | Meaning                         | Code Variable        |
