@@ -27,7 +27,6 @@ def get_Crank_Nicolson_mat(w_p, DL, ds):
     lu = splu(M_left)
     return M_right, lu
 
-
 def get_Lagrange_mat(Nz, dz, D):
     main = -2.0 * np.ones(Nz)
     off = 1.0 * np.ones(Nz - 1)
@@ -40,7 +39,6 @@ def get_Lagrange_mat(Nz, dz, D):
     DL = D * L
     return DL
 
-
 def propagate_q(q_init, M_right, lu, Ns):
     q = q_init.copy()
     q_mat = [q.copy()]
@@ -49,7 +47,6 @@ def propagate_q(q_init, M_right, lu, Ns):
         q = lu.solve(rhs)
         q_mat.append(q.copy())
     return(np.array(q_mat))
-
 
 def get_rho_p(q_forward, q_backward, z, ds, Ns, sigma=1.0):
     # Partition function
