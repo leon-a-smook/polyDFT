@@ -69,3 +69,17 @@ class Anderson:
 
         return w + self.beta * dw
     
+def helmholtz_solve(residual, dz, ell):
+    """
+    Solve (I - ell^2 d^2/dz^2) x = residual with simple
+    second-order Neumann BCs via a tridiagonal solve.
+    """
+    Nz = residual.size
+    r = (ell / dz)**2
+    diag = (1.0 + 2.0*r) * np.ones(Nz)
+    off  = (-r) * np.ones(Nz-1)
+    # Neumann-like tweak at boundaries
+    diag[0]  = 1.0 + r
+    diag[-1] = 1.0 + r
+    A = np.diag(diag) + np.diag(off, 1) + np.diag(off, -1)
+    return np.linalg.solve(A, residual)
