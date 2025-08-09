@@ -141,7 +141,7 @@ alpha = 0.2
 
 # Brush parameters
 sigma = 0.1
-chi = 0.5
+chi = 0.0
 rho_p *= sigma
 rho_s = 1 - rho_p
 
